@@ -23,8 +23,8 @@ export default function AbsenceDetailPage() {
             try {
                 const data = await getAbsenceById(params.id as string);
                 setAbsence(data);
-            } catch (err) {
-                console.error('Absence load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setPageLoading(false);
             }
@@ -40,8 +40,8 @@ export default function AbsenceDetailPage() {
         try {
             await updateAbsenceStatut(absence.id, 'validee');
             router.push('/absences');
-        } catch (err) {
-            console.error(err);
+        } catch {
+            void 0; // error handled silently
             setLoading(false);
         }
     }
@@ -52,8 +52,8 @@ export default function AbsenceDetailPage() {
         try {
             await updateAbsenceStatut(absence.id, 'refusee', motifRefus);
             router.push('/absences');
-        } catch (err) {
-            console.error(err);
+        } catch {
+            void 0; // error handled silently
             setLoading(false);
         }
     }

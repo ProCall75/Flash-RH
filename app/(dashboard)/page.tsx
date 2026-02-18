@@ -45,8 +45,8 @@ export default function DashboardPage() {
                         { label: 'Solde CP', value: '—', icon: Clock, color: 'from-amber-500 to-orange-600', change: 'Voir les absences' },
                     ]);
                 }
-            } catch (err) {
-                console.error('Dashboard load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

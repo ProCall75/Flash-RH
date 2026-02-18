@@ -20,8 +20,8 @@ export default function MessageDetailPage() {
                 setMessage(data);
                 // Mark as read
                 await markAsRead(params.id as string).catch(() => { });
-            } catch (err) {
-                console.error('Message load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

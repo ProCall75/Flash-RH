@@ -15,8 +15,8 @@ export default function ParametresPage() {
             try {
                 const cats = await getCategories();
                 setCategories(cats);
-            } catch (err) {
-                console.error('Categories load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

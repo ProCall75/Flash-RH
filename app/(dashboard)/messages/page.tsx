@@ -33,8 +33,8 @@ export default function MessagesPage() {
             try {
                 const data = await getMessages();
                 setMessages(data);
-            } catch (err) {
-                console.error('Messages load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

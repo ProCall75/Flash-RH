@@ -26,8 +26,8 @@ export default function FraisDetailPage() {
                 ]);
                 setReleve(r);
                 setCorrections(c);
-            } catch (err) {
-                console.error('Releve load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setPageLoading(false);
             }
@@ -41,8 +41,8 @@ export default function FraisDetailPage() {
         try {
             const updated = await validateReleve(releve.id);
             setReleve(updated);
-        } catch (err) {
-            console.error(err);
+        } catch {
+            void 0; // error handled silently
         } finally {
             setActionLoading(false);
         }

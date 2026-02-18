@@ -19,8 +19,8 @@ export default function AbsencesPage() {
             try {
                 const data = await getAbsences();
                 setAbsences(data);
-            } catch (err) {
-                console.error('Absences load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

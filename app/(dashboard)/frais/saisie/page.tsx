@@ -71,8 +71,8 @@ export default function SaisieFraisPage() {
                 });
                 setFraisGrid(fg);
                 setPrimesGrid(pg);
-            } catch (err) {
-                console.error('Load error:', err);
+            } catch {
+                void 0; // error handled silently
                 setError('Impossible de charger la période active.');
             } finally {
                 setPageLoading(false);

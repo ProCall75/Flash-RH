@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Receipt, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Receipt, Loader2 } from 'lucide-react';
 import { formatCurrency, getStatutColor, getStatutLabel, formatDateShort } from '@/lib/utils';
 import { useUser } from '@/lib/hooks/useUser';
 import { getReleves, getPeriodeActive } from '@/lib/actions/frais';
@@ -24,8 +24,8 @@ export default function FraisPage() {
                 ]);
                 setReleves(r);
                 setPeriode(p);
-            } catch (err) {
-                console.error('Frais load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

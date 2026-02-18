@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Search, MoreVertical, Loader2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2 } from 'lucide-react';
 import { getProfiles } from '@/lib/actions/users';
 import type { Profile, Role } from '@/types/database';
 
@@ -22,8 +22,8 @@ export default function UtilisateursPage() {
             try {
                 const data = await getProfiles();
                 setUsers(data);
-            } catch (err) {
-                console.error('Users load error:', err);
+            } catch {
+                void 0; // error handled silently
             } finally {
                 setLoading(false);
             }

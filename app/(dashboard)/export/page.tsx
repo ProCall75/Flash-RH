@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Download, FileText, Calendar, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDateShort } from '@/lib/utils';
-import { getExportPeriodes } from '@/lib/actions/export';
+import { getExportPeriodes, getExportData } from '@/lib/actions/export';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 interface EnrichedPeriode {
     id: string;
@@ -17,6 +18,7 @@ export default function ExportPage() {
     const [loading, setLoading] = useState<string | null>(null);
     const [periodes, setPeriodes] = useState<EnrichedPeriode[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         async function load() {
@@ -24,7 +26,7 @@ export default function ExportPage() {
                 const data = await getExportPeriodes();
                 setPeriodes(data);
             } catch {
-                void 0; // error handled silently
+                setError('Erreur lors du chargement des périodes.');
             } finally {
                 setPageLoading(false);
             }
@@ -34,64 +36,157 @@ export default function ExportPage() {
 
     async function handleExport(periodeId: string, format: 'pdf' | 'excel') {
         setLoading(`${periodeId}-${format}`);
-        // Demo: simulate export (real implementation uses API route with jsPDF/xlsx)
-        await new Promise((r) => setTimeout(r, 1500));
-        alert(`Export ${format.toUpperCase()} lancé pour la période sélectionnée. Le fichier sera téléchargé sous peu.`);
-        setLoading(null);
+        setError('');
+        try {
+            const data = await getExportData(periodeId);
+            const rows: string[][] = [
+                ['Employé', 'Total Frais', 'Total Primes', 'Total Général', 'Statut']
+            ];
+            for (const r of data.releves) {
+                rows.push([
+                    r.employe ? `${r.employe.prenom} ${r.employe.nom}` : 'Inconnu',
+                    String(r.total_frais),
+                    String(r.total_primes),
+                    String(r.total_general),
+                    r.statut,
+                ]);
+            }
+            rows.push(['', '', '', '', '']);
+            rows.push(['TOTAL', '', '', String(data.totalGeneral), `${data.nbReleves} relevés`]);
+
+            if (format === 'excel') {
+                const csv = rows.map(r => r.map(c => `"${c}"`).join(';')).join('\n');
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `export-frais-${formatDateShort(data.periode.date_debut)}-${formatDateShort(data.periode.date_fin)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                // PDF: generate printable HTML window
+                const html = `
+                    <html><head><title>Export Frais</title>
+                    <style>body{font-family:Arial,sans-serif;padding:40px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left}th{background:#f5f5f5;font-weight:600}h1{font-size:18px}</style>
+                    </head><body>
+                    <h1>Relevé de frais — ${formatDateShort(data.periode.date_debut)} → ${formatDateShort(data.periode.date_fin)}</h1>
+                    <p>${data.nbReleves} relevés — Total: ${formatCurrency(data.totalGeneral)}</p>
+                    <table><thead><tr>${rows[0].map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                    <tbody>${rows.slice(1).map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
+                    </body></html>
+                `;
+                const w = window.open('', '_blank');
+                if (w) {
+                    w.document.write(html);
+                    w.document.close();
+                    w.print();
+                }
+            }
+        } catch {
+            setError('Erreur lors de l\'export.');
+        } finally {
+            setLoading(null);
+        }
     }
 
     return (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {error && <ErrorBanner message={error} />}
             <div>
-                <h1 className="text-2xl font-bold text-white">Export</h1>
-                <p className="text-slate-400 mt-1">Exportez les relevés de frais par période</p>
+                <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text)' }}>Export</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '6px' }}>Exportez les relevés de frais par période</p>
             </div>
 
             {pageLoading && (
-                <div className="glass-card p-12 text-center">
-                    <Loader2 className="w-8 h-8 text-blue-400 mx-auto animate-spin" />
-                    <p className="text-slate-400 mt-2">Chargement...</p>
+                <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                    <Loader2 style={{ width: '32px', height: '32px', color: 'var(--primary)', margin: '0 auto' }} className="animate-spin" />
+                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Chargement...</p>
                 </div>
             )}
 
             {!pageLoading && (
-                <div className="space-y-4">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {periodes.length === 0 && (
-                        <div className="glass-card p-12 text-center">
-                            <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                            <p className="text-slate-400">Aucune période disponible</p>
+                        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                            <Calendar style={{ width: '48px', height: '48px', color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                            <p style={{ color: 'var(--text-muted)' }}>Aucune période disponible</p>
                         </div>
                     )}
                     {periodes.map((p) => (
-                        <div key={p.id} className="glass-card p-5">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-400 flex items-center justify-center">
-                                        <Calendar className="w-5 h-5" />
+                        <div key={p.id} className="glass-card">
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        background: 'var(--primary-bg)',
+                                        color: 'var(--primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <Calendar style={{ width: '20px', height: '20px' }} />
                                     </div>
                                     <div>
-                                        <h2 className="text-sm font-semibold text-white">
+                                        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
                                             {formatDateShort(p.date_debut)} → {formatDateShort(p.date_fin)}
                                         </h2>
-                                        <p className="text-xs text-slate-500">{p.nb_releves} relevés — Total {formatCurrency(p.total)}</p>
+                                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                            {p.nb_releves} relevés — Total {formatCurrency(p.total)}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-3">
+                            <div style={{ display: 'flex', gap: '12px' }}>
                                 <button
                                     onClick={() => handleExport(p.id, 'pdf')}
                                     disabled={loading !== null}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl hover:bg-red-500/20 transition-all text-sm font-medium disabled:opacity-50"
+                                    style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        padding: '10px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--error-bg)',
+                                        color: '#991b1b',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        fontFamily: 'inherit',
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        opacity: loading ? 0.5 : 1,
+                                        transition: 'all var(--transition-fast)',
+                                    }}
                                 >
-                                    {loading === `${p.id}-pdf` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                                    {loading === `${p.id}-pdf` ? <Loader2 style={{ width: '16px', height: '16px' }} className="animate-spin" /> : <FileText style={{ width: '16px', height: '16px' }} />}
                                     Export PDF
                                 </button>
                                 <button
                                     onClick={() => handleExport(p.id, 'excel')}
                                     disabled={loading !== null}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-all text-sm font-medium disabled:opacity-50"
+                                    style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        padding: '10px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--success-bg)',
+                                        color: '#065f46',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        fontFamily: 'inherit',
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        opacity: loading ? 0.5 : 1,
+                                        transition: 'all var(--transition-fast)',
+                                    }}
                                 >
-                                    {loading === `${p.id}-excel` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                    {loading === `${p.id}-excel` ? <Loader2 style={{ width: '16px', height: '16px' }} className="animate-spin" /> : <Download style={{ width: '16px', height: '16px' }} />}
                                     Export Excel
                                 </button>
                             </div>

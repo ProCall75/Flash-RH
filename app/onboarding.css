@@ -1,0 +1,148 @@
+/* ─── Flash RH - Driver.js Custom Styles ─── */
+
+/* Popover container */
+.driver-popover.flash-rh-popover {
+    background: #1a1a1a !important;
+    color: #f5f5f5 !important;
+    border-radius: 16px !important;
+    padding: 24px 28px !important;
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+    max-width: 380px !important;
+    border: none !important;
+}
+
+/* Title */
+.driver-popover.flash-rh-popover .driver-popover-title {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin-bottom: 8px !important;
+    line-height: 1.4 !important;
+    letter-spacing: -0.3px !important;
+}
+
+/* Description */
+.driver-popover.flash-rh-popover .driver-popover-description {
+    font-size: 13.5px !important;
+    line-height: 1.65 !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    font-weight: 400 !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-description strong {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* Progress bar */
+.driver-popover.flash-rh-popover .driver-popover-progress-text {
+    font-size: 11px !important;
+    color: rgba(255, 255, 255, 0.35) !important;
+    font-weight: 500 !important;
+}
+
+/* Navigation buttons */
+.driver-popover.flash-rh-popover .driver-popover-navigation-btns {
+    gap: 8px !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-prev-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-prev-btn:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    color: #fff !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-next-btn,
+.driver-popover.flash-rh-popover .driver-popover-close-btn-inside {
+    background: linear-gradient(135deg, #9D1E00, #C4360A) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 8px 20px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(157, 30, 0, 0.3) !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-next-btn:hover {
+    background: linear-gradient(135deg, #B52A08, #D94515) !important;
+    box-shadow: 0 4px 16px rgba(157, 30, 0, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Arrow */
+.driver-popover.flash-rh-popover .driver-popover-arrow {
+    border-color: #1a1a1a !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-arrow-side-left {
+    border-left-color: #1a1a1a !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-arrow-side-right {
+    border-right-color: #1a1a1a !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-arrow-side-top {
+    border-top-color: #1a1a1a !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-arrow-side-bottom {
+    border-bottom-color: #1a1a1a !important;
+}
+
+/* Overlay highlight */
+.driver-active-element {
+    border-radius: 12px !important;
+}
+
+/* Close button top-right */
+.driver-popover.flash-rh-popover .driver-popover-close-btn {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 18px !important;
+    top: 12px !important;
+    right: 12px !important;
+}
+
+.driver-popover.flash-rh-popover .driver-popover-close-btn:hover {
+    color: #fff !important;
+}
+
+/* Footer area */
+.driver-popover.flash-rh-popover .driver-popover-footer {
+    margin-top: 16px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+    .driver-popover.flash-rh-popover {
+        max-width: calc(100vw - 32px) !important;
+        padding: 20px 22px !important;
+        border-radius: 14px !important;
+    }
+
+    .driver-popover.flash-rh-popover .driver-popover-title {
+        font-size: 15px !important;
+    }
+
+    .driver-popover.flash-rh-popover .driver-popover-description {
+        font-size: 13px !important;
+    }
+}

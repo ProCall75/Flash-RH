@@ -10,7 +10,7 @@ function getClient() {
 
 // --- Périodes ---
 
-export async function getPeriodeActive() {
+export async function getPeriodeActive(): Promise<PeriodeFrais | null> {
     const supabase = getClient();
     const { data, error } = await supabase
         .from('periodes_frais')
@@ -18,10 +18,10 @@ export async function getPeriodeActive() {
         .eq('statut', 'ouverte')
         .order('date_debut', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
     if (error) throw error;
-    return data as PeriodeFrais;
+    return data as PeriodeFrais | null;
 }
 
 export async function getPeriodes() {
@@ -52,6 +52,19 @@ export async function getCategories(vehicule?: 'VL' | 'PL') {
     const { data, error } = await query;
     if (error) throw error;
     return (data ?? []) as CategorieFrais[];
+}
+
+export async function updateCategorie(id: string, updates: { montant_defaut?: number; actif?: boolean }) {
+    const supabase = getClient();
+    const { data, error } = await supabase
+        .from('categories_frais')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data as CategorieFrais;
 }
 
 // --- Relevés ---
@@ -221,6 +234,31 @@ export async function submitReleve(id: string) {
         .select().single();
     if (error) throw error;
     return data as ReleveFrais;
+}
+
+export async function saveDraftReleve(releveId: string) {
+    // Just recalculate totals — status stays 'brouillon'
+    return recalcTotals(releveId);
+}
+
+export async function getReleveLignes(releveId: string) {
+    const supabase = getClient();
+    const { data: frais, error: errF } = await supabase
+        .from('lignes_frais')
+        .select('*')
+        .eq('releve_id', releveId);
+    if (errF) throw errF;
+
+    const { data: primes, error: errP } = await supabase
+        .from('lignes_primes')
+        .select('*')
+        .eq('releve_id', releveId);
+    if (errP) throw errP;
+
+    return {
+        frais: (frais ?? []) as LigneFrais[],
+        primes: (primes ?? []) as LignePrime[],
+    };
 }
 
 export async function validateReleve(id: string) {

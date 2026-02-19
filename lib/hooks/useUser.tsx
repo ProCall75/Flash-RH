@@ -22,10 +22,11 @@ const UserContext = createContext<UserContextType>({
     refresh: async () => { },
 });
 
+const supabase = createClient();
+
 export function UserProvider({ children }: { children: ReactNode }) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
-    const supabase = createClient();
 
     async function fetchProfile() {
         const { data: { user } } = await supabase.auth.getUser();

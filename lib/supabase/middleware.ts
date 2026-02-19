@@ -47,5 +47,23 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
+    // RBAC: Block conducteurs from admin-only routes
+    const ADMIN_ROUTES = ['/utilisateurs', '/export', '/parametres'];
+    const isAdminRoute = ADMIN_ROUTES.some(r => request.nextUrl.pathname.startsWith(r));
+
+    if (user && isAdminRoute) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (profile?.role === 'conducteur') {
+            const url = request.nextUrl.clone();
+            url.pathname = '/';
+            return NextResponse.redirect(url);
+        }
+    }
+
     return supabaseResponse;
 }

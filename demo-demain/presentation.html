@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Flash RH — Flash Transports × PRAGMA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #1A1814;
+            --card: #242018;
+            --card2: #2C271F;
+            --accent: #C4593B;
+            --accentL: #E07A5A;
+            --gold: #D4A574;
+            --goldD: #A87845;
+            --green: #52C97C;
+            --greenBg: rgba(82, 201, 124, .12);
+            --red: #F07070;
+            --redBg: rgba(240, 112, 112, .1);
+            --text: #EDE4D8;
+            --dim: #9E9080;
+            --muted: #5E5448;
+            --border: rgba(212, 165, 116, .13);
+            --borderS: rgba(212, 165, 116, .22);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: var(--text);
+        }
+
+        /* ─── SLIDE SHELL ─────────────────────────────────── */
+        .slide {
+            width: 1280px;
+            height: 720px;
+            background: var(--bg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto 0;
+            page-break-after: always;
+            page-break-inside: avoid;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Noise texture overlay */
+        .slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Subtle top gradient line */
+        .slide::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--gold), transparent);
+            z-index: 2;
+        }
+
+        /* ─── FOOTER ─────────────────────────────────────────*/
+        .ft {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 13px 52px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10.5px;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            letter-spacing: .3px;
+            z-index: 10;
+            background: var(--bg);
+        }
+
+        .ft .pgm {
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-size: 10px;
+        }
+
+        /* ─── CONTENT AREA ────────────────────────────────── */
+        .body {
+            flex: 1;
+            padding: 44px 56px 60px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── BADGE ───────────────────────────────────────── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 14px;
+            background: var(--card2);
+            border: 1px solid var(--borderS);
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: var(--gold);
+            width: fit-content;
+            margin-bottom: 18px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ─── HEADINGS ────────────────────────────────────── */
+        .h1 {
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            line-height: 1.15;
+        }
+
+        .sub {
+            font-size: 14.5px;
+            color: var(--dim);
+            margin-bottom: 24px;
+            line-height: 1.55;
+        }
+
+        /* ─── CARDS / DIVIDERS ────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ─── STATUS PILL ────────────────────────────────── */
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            width: fit-content;
+            margin-top: 10px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .pill.green {
+            background: var(--greenBg);
+            color: var(--green);
+        }
+
+        .pill.orange {
+            background: rgba(251, 146, 60, .12);
+            color: #FB923C;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 1 — COVER
+════════════════════════════════════════════════════ */
+        #s1 {
+            background: radial-gradient(ellipse 80% 60% at 50% 40%, #2E1A10 0%, var(--bg) 70%);
+        }
+
+        #s1 .body {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cover-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 22px;
+            border: 1px solid var(--borderS);
+            border-radius: 100px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--gold);
+            background: rgba(196, 89, 59, .12);
+            margin-bottom: 38px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cover-h {
+            font-size: 62px;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .cover-h .hl {
+            color: var(--accentL);
+        }
+
+        .cover-tag {
+            font-size: 17px;
+            color: var(--dim);
+            max-width: 580px;
+            line-height: 1.65;
+            margin-bottom: 42px;
+        }
+
+        .cover-meta {
+            display: flex;
+            gap: 36px;
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+
+        .cover-meta span {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .cover-meta .lbl {
+            color: var(--dim);
+            font-weight: 500;
+        }
+
+        /* deco circles */
+        #s1 .deco1 {
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(196, 89, 59, .18) 0%, transparent 70%);
+            pointer-events: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        #s1 .deco2 {
+            position: absolute;
+            bottom: -80px;
+            left: -80px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 165, 116, .1) 0%, transparent 70%);
+            pointer-events: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 2 — CONSTAT
+════════════════════════════════════════════════════ */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .metric {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 16px;
+            text-align: center;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .metric .num {
+            font-size: 40px;
+            font-weight: 900;
+            color: var(--gold);
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+
+        .metric .lbl {
+            font-size: 11.5px;
+            color: var(--dim);
+        }
+
+        .pains {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .pain {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .pain .ib {
+            background: rgba(196, 89, 59, .14);
+        }
+
+        .pain h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 3px;
+        }
+
+        .pain p {
+            font-size: 12px;
+            color: var(--dim);
+            line-height: 1.5;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 3 — PROBLÈMES
+════════════════════════════════════════════════════ */
+        .probs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .prob {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .prob .ib {
+            background: var(--redBg);
+        }
+
+        .prob h3 {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .prob p {
+            font-size: 11.5px;
+            color: var(--dim);
+            line-height: 1.45;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 4 — AVANT / APRÈS
+════════════════════════════════════════════════════ */
+        .cmp {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .cmp-col {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cmp-h {
+            font-size: 17px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .before .cmp-h {
+            color: var(--red);
+        }
+
+        .after .cmp-h {
+            color: var(--green);
+        }
+
+        .cmp-col ul {
+            list-style: none;
+        }
+
+        .cmp-col li {
+            padding: 9px 0;
+            font-size: 13px;
+            color: var(--dim);
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.45;
+        }
+
+        .cmp-col li:last-child {
+            border-bottom: none;
+        }
+
+        .before li .ico {
+            color: var(--red);
+            font-size: 15px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .after li .ico {
+            color: var(--green);
+            font-size: 15px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 5 — MODULES
+════════════════════════════════════════════════════ */
+        .mods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            flex: 1;
+        }
+
+        .mod {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .mod .mi {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .mod h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .mod p {
+            font-size: 11.5px;
+            color: var(--dim);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 6 — CAS D'USAGE
+════════════════════════════════════════════════════ */
+        .cases {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            flex: 1;
+        }
+
+        .cas {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cas-who {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cas-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cas-avatar.a1 {
+            background: rgba(196, 89, 59, .2);
+        }
+
+        .cas-avatar.a2 {
+            background: rgba(82, 201, 124, .15);
+        }
+
+        .cas-avatar.a3 {
+            background: rgba(212, 165, 116, .15);
+        }
+
+        .cas-avatar.a4 {
+            background: rgba(96, 165, 250, .15);
+        }
+
+        .cas-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .cas-role {
+            font-size: 11px;
+            color: var(--dim);
+        }
+
+        .cas-story {
+            font-size: 12.5px;
+            color: var(--dim);
+            line-height: 1.55;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+
+        .cas-result {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            margin-top: auto;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .cas-result.ok {
+            background: var(--greenBg);
+            color: var(--green);
+        }
+
+        .cas-result.acc {
+            background: rgba(196, 89, 59, .12);
+            color: var(--accentL);
+        }
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 7 — WORKFLOW
+════════════════════════════════════════════════════ */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 22px;
+            justify-content: center;
+        }
+
+        .fstep {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 14px;
+            text-align: center;
+            width: 168px;
+            flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .fstep .fi {
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        .fstep h4 {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .fstep p {
+            font-size: 10.5px;
+            color: var(--dim);
+        }
+
+        .arrow {
+            color: var(--muted);
+            font-size: 18px;
+            margin: 0 3px;
+            flex-shrink: 0;
+        }
+
+        .details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .det {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .det .n {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .det h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .det p {
+            font-size: 11.5px;
+            color: var(--dim);
+            line-height: 1.45;
+        }
+
+        .det strong {
+            color: var(--gold);
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 8 — ROADMAP
+════════════════════════════════════════════════════ */
+        .rmg {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            flex: 1;
+        }
+
+        .rmc {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .ver {
+            display: inline-flex;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            background: rgba(196, 89, 59, .18);
+            color: var(--accentL);
+            width: fit-content;
+            margin-bottom: 9px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .rmc h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .rmc p {
+            font-size: 11.5px;
+            color: var(--dim);
+            line-height: 1.5;
+            flex: 1;
+            margin-bottom: 11px;
+        }
+
+        .q {
+            background: rgba(240, 112, 112, .08);
+            border: 1px solid rgba(240, 112, 112, .18);
+            border-radius: 8px;
+            padding: 9px;
+            font-size: 11px;
+            color: var(--red);
+            font-style: italic;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+
+        /* ════════════════════════════════════════════════════
+   SLIDE 9 — CTA
+════════════════════════════════════════════════════ */
+        #s9 {
+            background: radial-gradient(ellipse 80% 60% at 50% 40%, #2E1A10 0%, var(--bg) 70%);
+        }
+
+        #s9 .deco1 {
+            position: absolute;
+            top: -120px;
+            left: -120px;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(196, 89, 59, .16) 0%, transparent 70%);
+            pointer-events: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        #s9 .deco2 {
+            position: absolute;
+            bottom: -100px;
+            right: -100px;
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 165, 116, .1) 0%, transparent 70%);
+            pointer-events: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        #s9 .body {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cta-h {
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 16px;
+        }
+
+        .cta-h .hl {
+            color: var(--accentL);
+        }
+
+        .cta-tag {
+            font-size: 16px;
+            color: var(--dim);
+            max-width: 520px;
+            line-height: 1.6;
+            margin-bottom: 34px;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 28px;
+            border: 1.5px solid var(--accent);
+            border-radius: 100px;
+            color: var(--accentL);
+            font-size: 14.5px;
+            font-weight: 700;
+            background: rgba(196, 89, 59, .12);
+            margin-bottom: 28px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .ppl {
+            display: flex;
+            gap: 28px;
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+
+        .ppl span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ppl .n2 {
+            color: var(--dim);
+            font-weight: 600;
+        }
+
+
+        /* ─── SCREEN MODE ────────────────────────────────── */
+        @media screen {
+            body {
+                overflow: hidden;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: #0D0C0A;
+            }
+
+            .slide {
+                display: none;
+                box-shadow: 0 40px 120px rgba(0, 0, 0, .8);
+            }
+
+            .slide.active {
+                display: flex;
+            }
+
+            .nav {
+                position: fixed;
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                z-index: 999;
+                background: rgba(26, 24, 20, .96);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 8px 14px;
+                backdrop-filter: blur(12px);
+            }
+
+            .nav button {
+                width: 34px;
+                height: 34px;
+                border-radius: 8px;
+                border: none;
+                background: transparent;
+                color: var(--dim);
+                cursor: pointer;
+                font-size: 17px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: .15s;
+            }
+
+            .nav button:hover {
+                background: var(--card);
+                color: var(--text);
+            }
+
+            .pn {
+                font-size: 12.5px;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                padding: 0 8px;
+            }
+
+            .pn .cur {
+                color: var(--text);
+                font-weight: 700;
+            }
+        }
+
+        /* ─── PRINT MODE ─────────────────────────────────── */
+        @media print {
+            @page {
+                size: 1280px 720px;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 1280px;
+                height: auto;
+                background: transparent;
+                overflow: visible;
+            }
+
+            body {
+                display: block;
+            }
+
+            .nav {
+                display: none !important;
+            }
+
+            .slide {
+                display: flex !important;
+                margin: 0;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════════ SLIDE 1 — COVER ═══════════════ -->
+    <div class="slide active" id="s1">
+        <div class="deco1"></div>
+        <div class="deco2"></div>
+        <div class="body">
+            <div class="cover-badge">📋 Proposition sur-mesure</div>
+            <div class="cover-h">Votre gestion RH.<br><span class="hl">Dématérialisée.</span></div>
+            <div class="cover-tag">Portail de gestion des ressources humaines conçu pour Flash Transports.<br>Fini les
+                formulaires papier, les feuilles de frais manuelles et les allers-retours.</div>
+            <div class="cover-meta">
+                <span>📍 <span class="lbl">Flash Transports</span> — Taverny</span>
+                <span>📅 <span class="lbl">Février 2026</span></span>
+                <span>🏢 <span class="lbl">PRAGMA</span> Studio</span>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span class="pgm">PRAGMA</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 2 — CONSTAT ═══════════════ -->
+    <div class="slide" id="s2">
+        <div class="body">
+            <div class="badge">📊 Constat</div>
+            <div class="h1">Votre situation actuelle</div>
+            <div class="sub">Ce que nous avons observé après notre RDV du 10 février et les échanges avec Brice.</div>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="num">~35</div>
+                    <div class="lbl">conducteurs PL + VL</div>
+                </div>
+                <div class="metric">
+                    <div class="num">70</div>
+                    <div class="lbl">formulaires papier / mois</div>
+                </div>
+                <div class="metric">
+                    <div class="num">4–5h</div>
+                    <div class="lbl">perdues chaque semaine</div>
+                </div>
+                <div class="metric">
+                    <div class="num">0</div>
+                    <div class="lbl">outil digital aujourd'hui</div>
+                </div>
+            </div>
+            <div class="pains">
+                <div class="pain">
+                    <div class="icon-box ib">📝</div>
+                    <div>
+                        <h3>Tout passe par le papier</h3>
+                        <p>35 conducteurs × 2 formulaires/mois à traiter à la main : absences, relevés de frais,
+                            corrections — tout transite par des feuilles volantes.</p>
+                    </div>
+                </div>
+                <div class="pain">
+                    <div class="icon-box ib">🔇</div>
+                    <div>
+                        <h3>Zéro canal de communication</h3>
+                        <p>Brice refuse WhatsApp. Aucun outil pro pour diffuser les notes de service, rappels ou infos
+                            compta aux conducteurs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>2 / 8</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 3 — PROBLÈMES ═══════════════ -->
+    <div class="slide" id="s3">
+        <div class="body">
+            <div class="badge">⚠️ Problèmes identifiés</div>
+            <div class="h1">Ce que ça coûte au quotidien</div>
+            <div class="sub">Les conséquences directes du système actuel — remontées lors de notre RDV du 10 février.
+            </div>
+            <div class="probs">
+                <div class="prob">
+                    <div class="icon-box ib">📄</div>
+                    <div>
+                        <h3>35 feuilles papier à traiter</h3>
+                        <p>Chaque mois, Brice et Delphine vérifient, corrigent et classent manuellement les formulaires
+                            de tous les conducteurs.</p>
+                    </div>
+                </div>
+                <div class="prob">
+                    <div class="icon-box ib">🧮</div>
+                    <div>
+                        <h3>Calculs de frais manuels</h3>
+                        <p>Convention collective jour par jour, profil PL ou VL, corrections d'erreurs — tout est
+                            recompté à la main par le bureau.</p>
+                    </div>
+                </div>
+                <div class="prob">
+                    <div class="icon-box ib">📞</div>
+                    <div>
+                        <h3>Le conducteur appelle pour savoir</h3>
+                        <p>« Mon congé est validé ? » — sans notification, le conducteur doit téléphoner ou passer
+                            physiquement au bureau.</p>
+                    </div>
+                </div>
+                <div class="prob">
+                    <div class="icon-box ib">❌</div>
+                    <div>
+                        <h3>Communication impossible</h3>
+                        <p>WhatsApp refusé, aucun canal pro. Les notes de service, rappels et infos compta ne circulent
+                            pas vers le terrain.</p>
+                    </div>
+                </div>
+                <div class="prob">
+                    <div class="icon-box ib">⏳</div>
+                    <div>
+                        <h3>4–5 heures perdues par semaine</h3>
+                        <p>Valeur estimée : 1 100 € / mois de temps-bureau gaspillé en paperasse, relances et
+                            corrections évitables.</p>
+                    </div>
+                </div>
+                <div class="prob">
+                    <div class="icon-box ib">📊</div>
+                    <div>
+                        <h3>Aucune visibilité globale</h3>
+                        <p>Pas de dashboard, pas de calendrier des absences. Impossible de savoir en un coup d'œil qui
+                            est absent et quand.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>3 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 4 — AVANT / APRÈS ═══════════════ -->
+    <div class="slide" id="s4">
+        <div class="body">
+            <div class="badge">🔄 Transformation</div>
+            <div class="h1">Avant → Après</div>
+            <div class="sub">Ce qui change concrètement avec le portail Flash RH.</div>
+            <div class="cmp">
+                <div class="cmp-col before">
+                    <div class="cmp-h"><span>✕</span> Aujourd'hui</div>
+                    <ul>
+                        <li><span class="ico">✕</span> Formulaires papier pour absences et frais</li>
+                        <li><span class="ico">✕</span> Calculs manuels des conventions collectives PL/VL</li>
+                        <li><span class="ico">✕</span> Appeler le bureau pour connaître le statut d'une demande</li>
+                        <li><span class="ico">✕</span> Aucun canal de communication professionnel</li>
+                        <li><span class="ico">✕</span> Zéro visibilité sur les absences à venir</li>
+                        <li><span class="ico">✕</span> Export compta à la main, heure par heure</li>
+                    </ul>
+                </div>
+                <div class="cmp-col after">
+                    <div class="cmp-h"><span>✓</span> Avec le portail</div>
+                    <ul>
+                        <li><span class="ico">✓</span> Tout dématérialisé depuis le téléphone du conducteur</li>
+                        <li><span class="ico">✓</span> Montants préchargés selon profil PL/VL, 0 calcul</li>
+                        <li><span class="ico">✓</span> Notifications en temps réel — validé, refusé, corrigé</li>
+                        <li><span class="ico">✓</span> Messagerie interne intégrée, canal pro sécurisé</li>
+                        <li><span class="ico">✓</span> Dashboard avec calendrier, KPIs et alertes urgentes</li>
+                        <li><span class="ico">✓</span> Export PDF / Excel en 1 clic pour le bureau</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>4 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 5 — MODULES ═══════════════ -->
+    <div class="slide" id="s5">
+        <div class="body">
+            <div class="badge">🧩 Modules</div>
+            <div class="h1">Ce que l'outil sait déjà faire</div>
+            <div class="sub">6 modules en production, accessibles depuis n'importe quel appareil — téléphone, tablette,
+                PC.</div>
+            <div class="mods">
+                <div class="mod">
+                    <div class="mi">🏠</div>
+                    <h3>Dashboard</h3>
+                    <p>Vue d'ensemble : 4 KPIs, calendrier des absences, alertes urgentes et dernières activités. Adapté
+                        admin / conducteur.</p>
+                </div>
+                <div class="mod">
+                    <div class="mi">📋</div>
+                    <h3>Absences</h3>
+                    <p>Demande en 3 clics. 6 types (CP, maladie, accident du travail…). Workflow complet : soumission →
+                        validation → notification.</p>
+                </div>
+                <div class="mod">
+                    <div class="mi">💰</div>
+                    <h3>Relevés de frais</h3>
+                    <p>Cycle du 20 au 20. Montants convention collective PL/VL pré-remplis. Workflow : brouillon →
+                        soumis → corrigé → contesté.</p>
+                </div>
+                <div class="mod">
+                    <div class="mi">💬</div>
+                    <h3>Messagerie</h3>
+                    <p>Notes de service, rappels, infos compta. Ciblage par groupe (tous, PL, VL, bureau). Canal pro
+                        intégré, sans WhatsApp.</p>
+                </div>
+                <div class="mod">
+                    <div class="mi">🔔</div>
+                    <h3>Notifications</h3>
+                    <p>Centre de notifs en temps réel. Chaque événement clé déclenche une alerte : validation,
+                        correction, nouveau message.</p>
+                </div>
+                <div class="mod">
+                    <div class="mi">📊</div>
+                    <h3>Export & Paramètres</h3>
+                    <p>Export PDF/Excel par période pour la compta. Montants de frais paramétrables sans toucher au code
+                        si la CCN change.</p>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>5 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 6 — CAS D'USAGE ═══════════════ -->
+    <div class="slide" id="s6">
+        <div class="body">
+            <div class="badge">🎭 Cas d'usage concrets</div>
+            <div class="h1">Ce que ça change — pour chacun</div>
+            <div class="sub">4 situations réelles vécues chaque semaine chez Flash Transports.</div>
+            <div class="cases">
+                <div class="cas">
+                    <div class="cas-who">
+                        <div class="cas-avatar a1">🚛</div>
+                        <div>
+                            <div class="cas-name">Jean Durand — Conducteur PL</div>
+                            <div class="cas-role">Demande de congés payés</div>
+                        </div>
+                    </div>
+                    <div class="cas-story">Jean a besoin d'une semaine de congés fin mars. Il ouvre Flash RH depuis son
+                        téléphone, sélectionne "Congés payés", indique son dernier jour travaillé (10/03) et sa date de
+                        reprise (17/03). Validé en 30 secondes. Plus besoin de passer au bureau.</div>
+                    <div class="cas-result ok">✓ Brice reçoit la notification. Il valide en 1 clic. Jean est prévenu
+                        sans appel téléphonique.</div>
+                </div>
+                <div class="cas">
+                    <div class="cas-who">
+                        <div class="cas-avatar a2">🚐</div>
+                        <div>
+                            <div class="cas-name">Marc Leroy — Conducteur VL</div>
+                            <div class="cas-role">Relevé de frais mensuel</div>
+                        </div>
+                    </div>
+                    <div class="cas-story">Marc a fait 4 repas en province et 3 samedis travaillés. Il ouvre son relevé,
+                        coche les cases. Les montants convention collective VL sont déjà renseignés — pas de calcul à
+                        faire.</div>
+                    <div class="cas-result ok">✓ Total automatique : 193 €. Marc soumet. Le bureau voit le relevé
+                        directement dans le dashboard.</div>
+                </div>
+                <div class="cas">
+                    <div class="cas-who">
+                        <div class="cas-avatar a3">👔</div>
+                        <div>
+                            <div class="cas-name">Brice Gérard — Dirigeant</div>
+                            <div class="cas-role">Absence urgente + note de service</div>
+                        </div>
+                    </div>
+                    <div class="cas-story">7h30 : alerte — Jean est malade. Brice voit immédiatement qui est absent sans
+                        attendre d'appel. Il envoie ensuite une note de service "Contrôle technique avant le 28/02",
+                        ciblée uniquement sur les conducteurs PL.</div>
+                    <div class="cas-result acc">→ Tous les PL reçoivent la note. Plus de WhatsApp. Canal pro intégré,
+                        traçable.</div>
+                </div>
+                <div class="cas">
+                    <div class="cas-who">
+                        <div class="cas-avatar a4">📊</div>
+                        <div>
+                            <div class="cas-name">Le bureau — Gestionnaire / Compta</div>
+                            <div class="cas-role">Export fin de période 20→20</div>
+                        </div>
+                    </div>
+                    <div class="cas-story">Le 20 du mois, le gestionnaire sélectionne la période janv. 2026. Il voit le
+                        tableau
+                        récap : chaque conducteur, ses frais, ses primes, son total. Il corrige une ligne de Marc — Marc
+                        est notifié et peut contester.</div>
+                    <div class="cas-result ok">✓ Export PDF en 1 clic. Envoyé au cabinet de paie. Zéro calcul manuel.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>6 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 7 — WORKFLOW ═══════════════ -->
+    <div class="slide" id="s7">
+        <div class="body">
+            <div class="badge">🔄 Workflow</div>
+            <div class="h1">Une journée type — sans papier</div>
+            <div class="sub">Le fil rouge de votre quotidien, digitalisé de bout en bout.</div>
+            <div class="flow">
+                <div class="fstep">
+                    <div class="fi">👷</div>
+                    <h4>Conducteur</h4>
+                    <p>Ouvre l'app</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="fstep">
+                    <div class="fi">📝</div>
+                    <h4>Absence/Frais</h4>
+                    <p>3 clics depuis son tel</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="fstep">
+                    <div class="fi">🔔</div>
+                    <h4>Admin notifié</h4>
+                    <p>Alerte instantanée</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="fstep">
+                    <div class="fi">✅</div>
+                    <h4>Validation</h4>
+                    <p>Accepte ou refuse</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="fstep">
+                    <div class="fi">📱</div>
+                    <h4>Notif conducteur</h4>
+                    <p>Statut en temps réel</p>
+                </div>
+            </div>
+            <div class="details">
+                <div class="det">
+                    <div class="n">1</div>
+                    <div>
+                        <h4>Matin — Demande d'absence</h4>
+                        <p>Le conducteur ouvre l'app, remplit sa demande en 30 secondes. Type, dates, commentaire — et
+                            valide. <strong>Plus de formulaire papier à ramener au bureau.</strong></p>
+                    </div>
+                </div>
+                <div class="det">
+                    <div class="n">2</div>
+                    <div>
+                        <h4>Bureau — Validation instantanée</h4>
+                        <p>Brice reçoit la notification, ouvre le dashboard, voit la demande. Il valide ou refuse en 1
+                            clic avec motif. <strong>Le conducteur est prévenu immédiatement.</strong></p>
+                    </div>
+                </div>
+                <div class="det">
+                    <div class="n">3</div>
+                    <div>
+                        <h4>Fin de mois — Relevé de frais</h4>
+                        <p>Le conducteur coche ses jours. Totaux calculés automatiquement selon PL/VL. <strong>0 calcul
+                                manuel.</strong> Le bureau exporte le PDF en 1 clic pour la compta.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>7 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 8 — ROADMAP ═══════════════ -->
+    <div class="slide" id="s8">
+        <div class="body">
+            <div class="badge">🚀 Et pour aller plus loin</div>
+            <div class="h1">Roadmap d'évolutions</div>
+            <div class="sub">Les prochaines briques pensées pour Flash Transports, planifiées avec vous.</div>
+            <div class="rmg">
+                <div class="rmc">
+                    <span class="ver">V1.1</span>
+                    <h3>Signature électronique</h3>
+                    <p>Signature numérique des absences validées. Valeur probante juridique. Historique complet horodaté
+                        et traçable.</p>
+                    <div class="q">Les conducteurs signent-ils aujourd'hui un accusé de réception papier pour les
+                        absences validées ?</div>
+                </div>
+                <div class="rmc">
+                    <span class="ver">V1.1</span>
+                    <h3>Alertes compta avancées</h3>
+                    <p>Rappel automatique au J+17 si frais non saisis. Tableau récap mensuel par conducteur.
+                        Notifications dédiées au gestionnaire.</p>
+                    <div class="q">Le bureau reçoit-il actuellement un rappel quand un conducteur n'a pas rendu ses
+                        frais
+                        dans les temps ?</div>
+                </div>
+                <div class="rmc">
+                    <span class="ver">V1.2</span>
+                    <h3>Portail conducteur enrichi</h3>
+                    <p>Historique complet absences + frais. Documents RH téléchargeables. Connexion cabinet de paie pour
+                        le solde CP.</p>
+                    <div class="q">Les conducteurs ont-ils accès à leurs fiches de paie en ligne ou uniquement en
+                        version papier ?</div>
+                </div>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span>8 / 9</span></div>
+    </div>
+
+    <!-- ═══════════════ SLIDE 9 — CTA ═══════════════ -->
+    <div class="slide" id="s9">
+        <div class="deco1"></div>
+        <div class="deco2"></div>
+        <div class="body">
+            <div class="cta-h">Votre gestion RH.<br><span class="hl">Prête à passer au digital.</span></div>
+            <div class="cta-tag">6 modules en production, un outil terrain + bureau,<br>et une roadmap d'évolutions
+                pensée avec vous.</div>
+            <div class="cta-btn">💬 On en discute quand vous voulez</div>
+            <div class="ppl">
+                <span>👤 <span class="n2">Antonin Rimaud</span></span>
+                <span>👤 <span class="n2">Marwane El Moutribi</span></span>
+                <span>🔗 <span class="n2">PRAGMA</span> Studio</span>
+            </div>
+        </div>
+        <div class="ft"><span>Flash Transports × PRAGMA — Confidentiel</span><span class="pgm">PRAGMA</span></div>
+    </div>
+
+    <!-- NAV -->
+    <div class="nav">
+        <button onclick="prev()">‹</button>
+        <div class="pn"><span class="cur" id="c">1</span>&nbsp;/&nbsp;9</div>
+        <button onclick="next()">›</button>
+    </div>
+
+    <script>
+        let cur = 1; const tot = 9;
+        function show(n) { document.querySelectorAll('.slide').forEach(s => s.classList.remove('active')); document.getElementById('s' + n).classList.add('active'); document.getElementById('c').textContent = n; cur = n; }
+        function next() { if (cur < tot) show(cur + 1); }
+        function prev() { if (cur > 1) show(cur - 1); }
+        document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); } if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); } });
+    </script>
+</body>
+
+</html>

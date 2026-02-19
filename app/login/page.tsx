@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -35,23 +35,53 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-            <div className="w-full max-w-md">
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg)',
+            padding: '16px',
+        }}>
+            <div style={{ width: '100%', maxWidth: '420px' }}>
                 {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4 shadow-lg shadow-blue-500/25">
-                        <Truck className="w-8 h-8 text-white" />
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--gradient-aurora)',
+                        marginBottom: '16px',
+                        boxShadow: '0 8px 24px rgba(157, 30, 0, 0.25)',
+                        color: 'white',
+                        fontWeight: 800,
+                        fontSize: '22px',
+                    }}>
+                        FT
                     </div>
-                    <h1 className="text-2xl font-bold text-white">Flash RH</h1>
-                    <p className="text-slate-400 mt-1">Portail ressources humaines</p>
+                    <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
+                        Flash Transports
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '4px', fontSize: '14px' }}>
+                        Portail Ressources Humaines
+                    </p>
                 </div>
 
                 {/* Card */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
-                    <form onSubmit={handleLogin} className="space-y-5">
+                <div className="glass-card" style={{ padding: '32px' }}>
+                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {/* Email */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+                            <label htmlFor="email" style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: 'var(--text-muted)',
+                                marginBottom: '6px',
+                            }}>
                                 Email
                             </label>
                             <input
@@ -61,16 +91,35 @@ export default function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 placeholder="prenom.nom@flash-transports.fr"
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    background: 'var(--white)',
+                                    border: '1.5px solid var(--border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontSize: '14px',
+                                    fontFamily: 'inherit',
+                                    color: 'var(--text)',
+                                    outline: 'none',
+                                    transition: 'border-color var(--transition-fast)',
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                             />
                         </div>
 
                         {/* Password */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+                            <label htmlFor="password" style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: 'var(--text-muted)',
+                                marginBottom: '6px',
+                            }}>
                                 Mot de passe
                             </label>
-                            <div className="relative">
+                            <div style={{ position: 'relative' }}>
                                 <input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
@@ -78,21 +127,53 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 14px',
+                                        paddingRight: '44px',
+                                        background: 'var(--white)',
+                                        border: '1.5px solid var(--border)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        fontSize: '14px',
+                                        fontFamily: 'inherit',
+                                        color: 'var(--text)',
+                                        outline: 'none',
+                                        transition: 'border-color var(--transition-fast)',
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                    onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                                    style={{
+                                        position: 'absolute',
+                                        right: '12px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-muted)',
+                                        padding: '2px',
+                                    }}
                                 >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    {showPassword ? <EyeOff style={{ width: '18px', height: '18px' }} /> : <Eye style={{ width: '18px', height: '18px' }} />}
                                 </button>
                             </div>
                         </div>
 
                         {/* Error */}
                         {error && (
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
+                            <div style={{
+                                background: 'var(--error-bg)',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '12px 16px',
+                                color: '#991b1b',
+                                fontSize: '13px',
+                                fontWeight: 500,
+                            }}>
                                 {error}
                             </div>
                         )}
@@ -101,11 +182,19 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                            className="btn btn-primary"
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                justifyContent: 'center',
+                                fontSize: '14px',
+                                opacity: loading ? 0.6 : 1,
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                            }}
                         >
                             {loading ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 style={{ width: '18px', height: '18px' }} className="animate-spin" />
                                     Connexion...
                                 </>
                             ) : (
@@ -113,10 +202,24 @@ export default function LoginPage() {
                             )}
                         </button>
                     </form>
+
+                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                        <a href="/auth/reset-password" style={{
+                            fontSize: '13px', color: 'var(--primary)',
+                            textDecoration: 'none', fontWeight: 500,
+                        }}>
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-slate-500 text-sm mt-6">
+                <p style={{
+                    textAlign: 'center',
+                    color: 'var(--text-muted)',
+                    fontSize: '12px',
+                    marginTop: '24px',
+                }}>
                     Flash Transports © 2026 — Propulsé par PRAGMA
                 </p>
             </div>

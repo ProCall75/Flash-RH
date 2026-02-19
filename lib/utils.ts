@@ -41,18 +41,18 @@ export function getAbsenceTypeLabel(type: string): string {
 
 export function getStatutColor(statut: string): string {
     const colors: Record<string, string> = {
-        en_attente: 'bg-amber-500/15 text-amber-400',
-        validee: 'bg-emerald-500/15 text-emerald-400',
-        refusee: 'bg-red-500/15 text-red-400',
-        brouillon: 'bg-slate-500/15 text-slate-400',
-        soumis: 'bg-blue-500/15 text-blue-400',
-        valide: 'bg-emerald-500/15 text-emerald-400',
-        corrige: 'bg-amber-500/15 text-amber-400',
-        conteste: 'bg-red-500/15 text-red-400',
-        ouverte: 'bg-amber-500/15 text-amber-400',
-        resolue: 'bg-emerald-500/15 text-emerald-400',
+        en_attente: 'badge-pending',
+        validee: 'badge-approved',
+        refusee: 'badge-rejected',
+        brouillon: 'badge-info',
+        soumis: 'badge-info',
+        valide: 'badge-approved',
+        corrige: 'badge-pending',
+        conteste: 'badge-rejected',
+        ouverte: 'badge-pending',
+        resolue: 'badge-approved',
     };
-    return colors[statut] || 'bg-slate-500/15 text-slate-400';
+    return colors[statut] || 'badge-info';
 }
 
 export function getStatutLabel(statut: string): string {

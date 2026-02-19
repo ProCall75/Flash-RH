@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/hooks/useUser';
-import { Bell, LogOut, Loader2 } from 'lucide-react';
+import { Bell, LogOut, Loader2, Compass } from 'lucide-react';
 import { useState } from 'react';
 
 export function Header() {
@@ -25,35 +25,124 @@ export function Header() {
         conducteur: 'Conducteur',
     };
 
-    return (
-        <header className="h-16 border-b border-white/5 bg-slate-900/30 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30">
-            {/* Left: Page title area */}
-            <div />
+    const today = new Date().toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 
-            {/* Right: User info + actions */}
-            <div className="flex items-center gap-4">
+    return (
+        <header style={{
+            height: '64px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--white)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 32px',
+            position: 'sticky',
+            top: 0,
+            zIndex: 30,
+        }}>
+            {/* Left: Date — hidden on mobile */}
+            <div className="desktop-only">
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'capitalize' }}>
+                    {today}
+                </p>
+            </div>
+            {/* Left: Brand on mobile */}
+            <div className="mobile-only" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                    width: '28px', height: '28px', background: 'var(--gradient-aurora)',
+                    borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: '11px', color: 'white',
+                }}>FT</div>
+                <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>Flash RH</span>
+            </div>
+
+            {/* Right: Notifications + User + Logout */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Onboarding Trigger */}
+                <button
+                    onClick={() => (window as any).__startOnboarding?.()}
+                    className="desktop-only"
+                    title="Visite guidée"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 14px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, rgba(157,30,0,0.08), rgba(196,54,10,0.12))',
+                        border: '1px solid rgba(157,30,0,0.15)',
+                        cursor: 'pointer',
+                        color: 'var(--primary)',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        transition: 'all 0.2s ease',
+                    }}
+                >
+                    <Compass style={{ width: '15px', height: '15px' }} />
+                    Découvrir
+                </button>
+
                 {/* Notifications */}
-                <button className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                <button id="header-notifications" style={{
+                    position: 'relative',
+                    padding: '8px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    transition: 'all var(--transition-fast)',
+                }}>
+                    <Bell style={{ width: '20px', height: '20px' }} />
+                    <span style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        width: '16px',
+                        height: '16px',
+                        background: 'var(--primary)',
+                        borderRadius: '50%',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
                         3
                     </span>
                 </button>
 
                 {/* Profile */}
                 {loading ? (
-                    <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                    <Loader2 style={{ width: '20px', height: '20px', color: 'var(--text-muted)' }} className="animate-spin" />
                 ) : profile ? (
-                    <div className="flex items-center gap-3">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-medium text-white">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="desktop-only" style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
                                 {profile.prenom} {profile.nom}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                 {roleLabels[profile.role] || profile.role}
                             </p>
                         </div>
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            background: 'var(--gradient-aurora)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                        }}>
                             {profile.prenom?.[0]}{profile.nom?.[0]}
                         </div>
                     </div>
@@ -63,12 +152,20 @@ export function Header() {
                 <button
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    style={{
+                        padding: '8px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-muted)',
+                        transition: 'all var(--transition-fast)',
+                    }}
                 >
                     {loggingOut ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 style={{ width: '20px', height: '20px' }} className="animate-spin" />
                     ) : (
-                        <LogOut className="w-5 h-5" />
+                        <LogOut style={{ width: '20px', height: '20px' }} />
                     )}
                 </button>
             </div>

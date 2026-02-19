@@ -1,22 +1,25 @@
 {
-    "name": "Flash RH",
+    "name": "Flash RH — Portail Ressources Humaines",
     "short_name": "Flash RH",
     "description": "Portail de gestion RH - Flash Transports",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0f172a",
-    "theme_color": "#0f172a",
+    "background_color": "#F5F4F2",
+    "theme_color": "#9D1E00",
     "orientation": "portrait-primary",
+    "scope": "/",
     "icons": [
         {
             "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ]
 }

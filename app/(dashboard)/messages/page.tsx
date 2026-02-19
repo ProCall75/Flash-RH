@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, MessageSquare, Bell, AlertTriangle, FileText, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { useUser } from '@/lib/hooks/useUser';
 import { getMessages } from '@/lib/actions/messages';
 import type { Message, MessageType } from '@/types/database';
@@ -15,11 +16,11 @@ const typeIcons: Record<MessageType, typeof Bell> = {
     urgent: AlertTriangle,
 };
 
-const typeColors: Record<MessageType, string> = {
-    note_service: 'bg-blue-500/15 text-blue-400',
-    info: 'bg-slate-500/15 text-slate-400',
-    rappel: 'bg-amber-500/15 text-amber-400',
-    urgent: 'bg-red-500/15 text-red-400',
+const typeStyles: Record<MessageType, { bg: string; color: string }> = {
+    note_service: { bg: 'var(--info-bg)', color: '#1e40af' },
+    info: { bg: 'rgba(100,116,139,0.1)', color: '#64748b' },
+    rappel: { bg: 'var(--warning-bg)', color: '#92400e' },
+    urgent: { bg: 'var(--error-bg)', color: '#991b1b' },
 };
 
 export default function MessagesPage() {
@@ -27,6 +28,7 @@ export default function MessagesPage() {
     const [filter, setFilter] = useState<MessageType | 'tous'>('tous');
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         async function load() {
@@ -34,7 +36,7 @@ export default function MessagesPage() {
                 const data = await getMessages();
                 setMessages(data);
             } catch {
-                void 0; // error handled silently
+                void 0;
             } finally {
                 setLoading(false);
             }
@@ -46,34 +48,49 @@ export default function MessagesPage() {
         ? messages
         : messages.filter((m) => m.type === filter);
 
+    const filterButtons = [
+        { key: 'tous' as const, label: 'Tous' },
+        { key: 'urgent' as const, label: 'Urgents' },
+        { key: 'note_service' as const, label: 'Notes' },
+        { key: 'rappel' as const, label: 'Rappels' },
+        { key: 'info' as const, label: 'Infos' },
+    ];
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Messagerie</h1>
-                    <p className="text-slate-400 mt-1">Communication interne</p>
+                    <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text)' }}>Messagerie</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '6px' }}>Communication interne</p>
                 </div>
                 {(isAdmin || isBureau) && (
-                    <Link
-                        href="/messages/nouveau"
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">Nouveau message</span>
+                    <Link href="/messages/nouveau" className="btn btn-primary" style={{ fontSize: '13px' }}>
+                        <Plus style={{ width: '16px', height: '16px' }} />
+                        Nouveau message
                     </Link>
                 )}
             </div>
 
             {/* Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
-                {([['tous', 'Tous'], ['urgent', 'Urgents'], ['note_service', 'Notes'], ['rappel', 'Rappels'], ['info', 'Infos']] as const).map(([key, label]) => (
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--bg)', padding: '4px', borderRadius: 'var(--radius-sm)', width: 'fit-content' }}>
+                {filterButtons.map(({ key, label }) => (
                     <button
                         key={key}
                         onClick={() => setFilter(key)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${filter === key
-                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                            : 'bg-white/5 text-slate-400 border border-transparent hover:bg-white/10'
-                            }`}
+                        style={{
+                            padding: '8px 20px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            background: filter === key ? 'var(--white)' : 'transparent',
+                            fontFamily: 'inherit',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            color: filter === key ? 'var(--text)' : 'var(--text-muted)',
+                            cursor: 'pointer',
+                            transition: 'all var(--transition-fast)',
+                            boxShadow: filter === key ? 'var(--shadow-xs)' : 'none',
+                            whiteSpace: 'nowrap',
+                        }}
                     >
                         {label}
                     </button>
@@ -82,36 +99,59 @@ export default function MessagesPage() {
 
             {/* Loading */}
             {loading && (
-                <div className="glass-card p-12 text-center">
-                    <Loader2 className="w-8 h-8 text-blue-400 mx-auto animate-spin" />
-                    <p className="text-slate-400 mt-2">Chargement...</p>
+                <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                    <Loader2 style={{ width: '32px', height: '32px', color: 'var(--primary)', margin: '0 auto' }} className="animate-spin" />
+                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Chargement...</p>
                 </div>
             )}
 
             {/* Messages */}
             {!loading && (
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {filtered.map((msg) => {
                         const Icon = typeIcons[msg.type] || MessageSquare;
+                        const style = typeStyles[msg.type] || typeStyles.info;
                         const userId = profile?.id || '';
                         const isRead = (msg.lu_par || []).includes(userId);
                         return (
                             <Link
                                 key={msg.id}
                                 href={`/messages/${msg.id}`}
-                                className={`glass-card p-4 flex items-start gap-4 hover:border-blue-500/20 transition-all group ${!isRead ? 'border-l-2 border-l-blue-500' : ''}`}
+                                className="glass-card"
+                                style={{
+                                    padding: '16px 20px',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '16px',
+                                    textDecoration: 'none',
+                                    borderLeft: !isRead ? '3px solid var(--primary)' : '3px solid transparent',
+                                }}
                             >
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${typeColors[msg.type] || 'bg-slate-500/15 text-slate-400'}`}>
-                                    <Icon className="w-5 h-5" />
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    background: style.bg,
+                                    color: style.color,
+                                }}>
+                                    <Icon style={{ width: '20px', height: '20px' }} />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className={`text-sm font-semibold group-hover:text-blue-300 transition-colors ${!isRead ? 'text-white' : 'text-slate-300'}`}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <p style={{
+                                            fontSize: '14px',
+                                            fontWeight: !isRead ? 700 : 500,
+                                            color: 'var(--text)',
+                                        }}>
                                             {msg.titre}
                                         </p>
-                                        {!isRead && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                                        {!isRead && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />}
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-0.5">
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                         {msg.auteur ? `${msg.auteur.prenom} ${msg.auteur.nom}` : 'Admin'} — {formatDate(msg.created_at)}
                                     </p>
                                 </div>
@@ -120,9 +160,9 @@ export default function MessagesPage() {
                     })}
 
                     {filtered.length === 0 && (
-                        <div className="glass-card p-12 text-center">
-                            <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                            <p className="text-slate-400">Aucun message</p>
+                        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                            <MessageSquare style={{ width: '48px', height: '48px', color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+                            <p style={{ color: 'var(--text-muted)' }}>Aucun message</p>
                         </div>
                     )}
                 </div>

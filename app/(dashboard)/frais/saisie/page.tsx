@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Send, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Check, Save } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useUser } from '@/lib/hooks/useUser';
 import {
@@ -13,6 +13,9 @@ import {
     upsertLigneFrais,
     upsertLignePrime,
     submitReleve,
+    saveDraftReleve,
+    getReleveLignes,
+    getReleveById,
 } from '@/lib/actions/frais';
 import type { CategorieFrais, PeriodeFrais } from '@/types/database';
 
@@ -29,10 +32,13 @@ function generateDays(start: string, end: string): string[] {
     return days;
 }
 
-export default function SaisieFraisPage() {
+function SaisieFraisPageInner() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const existingReleveId = searchParams.get('releve');
     const { profile } = useUser();
     const [loading, setLoading] = useState(false);
+    const [savingDraft, setSavingDraft] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -44,42 +50,88 @@ export default function SaisieFraisPage() {
     const [fraisGrid, setFraisGrid] = useState<GridData>({});
     const [primesGrid, setPrimesGrid] = useState<GridData>({});
 
-    // Load period, categories, and get/create releve
+
+
     useEffect(() => {
         async function load() {
             try {
-                const p = await getPeriodeActive();
+                // Step 1: Get active period
+                let p: PeriodeFrais | null = null;
+                try {
+                    p = await getPeriodeActive();
+                } catch (err) {
+                    console.error('getPeriodeActive error:', err);
+                    setError('Erreur de connexion au serveur. Vérifiez votre connexion.');
+                    setPageLoading(false);
+                    return;
+                }
+                if (!p) {
+                    setError('Aucune période active. Contactez l\'administrateur pour ouvrir une période.');
+                    setPageLoading(false);
+                    return;
+                }
                 setPeriode(p);
 
+                // Step 2: Get categories
                 const vehicule = profile?.profil_vehicule as 'VL' | 'PL' | undefined;
                 const allCats = await getCategories(vehicule || undefined);
-                setCats(allCats.filter(c => c.type === 'frais'));
-                setPrimesCats(allCats.filter(c => c.type === 'prime'));
+                const fraisCats = allCats.filter(c => c.type === 'frais');
+                const prCats = allCats.filter(c => c.type === 'prime');
+                setCats(fraisCats);
+                setPrimesCats(prCats);
 
-                const releve = await getOrCreateReleve(p.id);
-                setReleveId(releve.id);
-
-                // Initialize grids
+                // Step 3: Initialize grid
                 const days = generateDays(p.date_debut, p.date_fin);
                 const fg: GridData = {};
                 const pg: GridData = {};
                 days.forEach(d => {
                     fg[d] = {};
                     pg[d] = {};
-                    allCats.filter(c => c.type === 'frais').forEach(c => { fg[d][c.id] = false; });
-                    allCats.filter(c => c.type === 'prime').forEach(c => { pg[d][c.id] = false; });
+                    fraisCats.forEach(c => { fg[d][c.id] = false; });
+                    prCats.forEach(c => { pg[d][c.id] = false; });
                 });
+
+                // Step 4: Get or load relevé
+                let relId: string | null = null;
+                try {
+                    if (existingReleveId) {
+                        // Resuming a draft — load existing relevé
+                        const releve = await getReleveById(existingReleveId);
+                        relId = releve.id;
+
+                        // Load existing lines and pre-check the grid
+                        const lignes = await getReleveLignes(existingReleveId);
+                        for (const l of lignes.frais) {
+                            if (fg[l.date_jour] && l.coche) {
+                                fg[l.date_jour][l.categorie_id] = true;
+                            }
+                        }
+                        for (const l of lignes.primes) {
+                            if (pg[l.date_jour]) {
+                                pg[l.date_jour][l.categorie_id] = true;
+                            }
+                        }
+                    } else {
+                        const releve = await getOrCreateReleve(p.id);
+                        relId = releve.id;
+                    }
+                    setReleveId(relId);
+                } catch (err) {
+                    console.error('getOrCreateReleve error:', err);
+                    setError('Impossible de créer votre relevé. Les données sont en lecture seule.');
+                }
+
                 setFraisGrid(fg);
                 setPrimesGrid(pg);
-            } catch {
-                void 0; // error handled silently
-                setError('Impossible de charger la période active.');
+            } catch (err) {
+                console.error('Load frais error:', err);
+                setError('Erreur lors du chargement des données de frais.');
             } finally {
                 setPageLoading(false);
             }
         }
         load();
-    }, [profile?.profil_vehicule]);
+    }, [profile?.profil_vehicule, existingReleveId]);
 
     const days = useMemo(() => {
         if (!periode) return [];
@@ -127,39 +179,52 @@ export default function SaisieFraisPage() {
         return day === 0 || day === 6;
     };
 
+    async function saveLines() {
+        if (!releveId) return;
+        for (const day of days) {
+            for (const cat of cats) {
+                const coche = fraisGrid[day]?.[cat.id] ?? false;
+                await upsertLigneFrais({
+                    releve_id: releveId,
+                    date_jour: day,
+                    categorie_id: cat.id,
+                    montant: cat.montant_defaut,
+                    coche,
+                });
+            }
+            for (const p of primesCats) {
+                const coche = primesGrid[day]?.[p.id] ?? false;
+                await upsertLignePrime({
+                    releve_id: releveId,
+                    date_jour: day,
+                    categorie_id: p.id,
+                    montant: p.montant_defaut,
+                    quantite: coche ? 1 : 0,
+                });
+            }
+        }
+    }
+
+    async function handleSaveDraft() {
+        if (!releveId) return;
+        setSavingDraft(true);
+        setError('');
+        try {
+            await saveLines();
+            await saveDraftReleve(releveId);
+            router.push('/frais');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+            setSavingDraft(false);
+        }
+    }
+
     async function handleSubmit() {
         if (!releveId) return;
         setLoading(true);
         setError('');
         try {
-            // Save all frais lines
-            for (const day of days) {
-                for (const cat of cats) {
-                    const coche = fraisGrid[day]?.[cat.id] ?? false;
-                    if (coche) {
-                        await upsertLigneFrais({
-                            releve_id: releveId,
-                            date_jour: day,
-                            categorie_id: cat.id,
-                            montant: cat.montant_defaut,
-                            coche: true,
-                        });
-                    }
-                }
-                for (const p of primesCats) {
-                    const coche = primesGrid[day]?.[p.id] ?? false;
-                    if (coche) {
-                        await upsertLignePrime({
-                            releve_id: releveId,
-                            date_jour: day,
-                            categorie_id: p.id,
-                            montant: p.montant_defaut,
-                            quantite: 1,
-                        });
-                    }
-                }
-            }
-            // Submit the releve
+            await saveLines();
             await submitReleve(releveId);
             router.push('/frais');
         } catch (err) {
@@ -168,145 +233,209 @@ export default function SaisieFraisPage() {
         }
     }
 
+
+
     if (pageLoading) {
         return (
-            <div className="glass-card p-12 text-center">
-                <Loader2 className="w-8 h-8 text-blue-400 mx-auto animate-spin" />
-                <p className="text-slate-400 mt-2">Chargement de la période...</p>
+            <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                <Loader2 style={{ width: '32px', height: '32px', color: 'var(--primary)', margin: '0 auto' }} className="animate-spin" />
+                <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Chargement de la période...</p>
             </div>
         );
     }
 
+    const thStyle: React.CSSProperties = {
+        textAlign: 'left', padding: '6px 4px', fontSize: '10px', fontWeight: 600,
+        textTransform: 'uppercase', letterSpacing: '0.3px', color: 'var(--text-muted)',
+        lineHeight: '1.2',
+    };
+
+    const stickyTd: React.CSSProperties = {
+        padding: '6px 8px', position: 'sticky', left: 0,
+        background: 'var(--white)', zIndex: 10, minWidth: '65px',
+        borderRight: '2px solid var(--border)',
+    };
+
+    const isBusy = loading || savingDraft;
+
     return (
-        <div className="space-y-6">
-            <Link href="/frais" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
-                <ArrowLeft className="w-4 h-4" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <Link href="/frais" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                <ArrowLeft style={{ width: '16px', height: '16px' }} />
                 Retour aux frais
             </Link>
 
-            <div className="flex items-center justify-between">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Saisie des frais</h1>
-                    <p className="text-slate-400 mt-1">
+                    <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Saisie des frais</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
                         {periode
                             ? `Période : ${new Date(periode.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → ${new Date(periode.date_fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
                             : 'Aucune période active'}
                     </p>
                 </div>
-                <div className="text-right">
-                    <p className="text-2xl font-bold text-white">{formatCurrency(totalFrais + totalPrimes)}</p>
-                    <p className="text-xs text-slate-500">Frais {formatCurrency(totalFrais)} + Primes {formatCurrency(totalPrimes)}</p>
+                <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)' }}>{formatCurrency(totalFrais + totalPrimes)}</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Frais {formatCurrency(totalFrais)} + Primes {formatCurrency(totalPrimes)}</p>
                 </div>
             </div>
 
             {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--error-bg)', border: '1px solid rgba(239,68,68,0.2)', color: '#991b1b', fontSize: '13px' }}>
                     {error}
                 </div>
             )}
 
-            {/* Frais Grid */}
-            <div className="glass-card overflow-hidden">
-                <div className="p-4 border-b border-white/5">
-                    <h2 className="text-sm font-semibold text-white">Frais de déplacement</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Cochez les jours où le frais s&apos;applique</p>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-white/5">
-                                <th className="text-left text-slate-400 font-medium p-3 sticky left-0 bg-slate-950/95 backdrop-blur z-10 min-w-[80px]">Jour</th>
-                                {cats.map((c) => (
-                                    <th key={c.id} className="text-center text-slate-400 font-medium p-2 min-w-[70px]">
-                                        <div>{c.nom}</div>
-                                        <div className="text-slate-600">{formatCurrency(c.montant_defaut)}</div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {days.map((day) => (
-                                <tr key={day} className={`border-b border-white/5 ${isWeekend(day) ? 'bg-white/[0.02]' : ''}`}>
-                                    <td className="p-3 sticky left-0 bg-slate-950/95 backdrop-blur z-10">
-                                        <span className={`font-medium ${isWeekend(day) ? 'text-slate-600' : 'text-white'}`}>
-                                            {dayOfWeek(day)} {dayNum(day)}
-                                        </span>
-                                    </td>
-                                    {cats.map((cat) => (
-                                        <td key={cat.id} className="text-center p-2">
-                                            <button
-                                                onClick={() => toggleFrais(day, cat.id)}
-                                                className={`w-8 h-8 rounded-lg border transition-all ${fraisGrid[day]?.[cat.id]
-                                                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
-                                                    : 'bg-white/5 border-white/10 text-transparent hover:border-white/20'
-                                                    }`}
-                                            >
-                                                <Check className="w-4 h-4 mx-auto" />
-                                            </button>
-                                        </td>
+            {/* ═══ Frais Grid Table ═══ */}
+            <div>
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Frais de déplacement</h2>
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Cochez les jours où le frais s&apos;applique</p>
+                    </div>
+                    <div className="expense-grid-wrapper" style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <th style={{ ...thStyle, position: 'sticky', left: 0, background: 'var(--white)', zIndex: 10, minWidth: '80px' }}>Jour</th>
+                                    {cats.map((c) => (
+                                        <th key={c.id} style={{ ...thStyle, textAlign: 'center', minWidth: '52px', maxWidth: '70px', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            <div style={{ fontSize: '9px', lineHeight: '1.2' }}>{c.nom}</div>
+                                            <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '10px', marginTop: '2px' }}>{formatCurrency(c.montant_defaut)}</div>
+                                        </th>
                                     ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {days.map((day) => (
+                                    <tr key={day} style={{ borderBottom: '1px solid var(--border)', background: isWeekend(day) ? 'var(--bg)' : 'transparent' }}>
+                                        <td style={stickyTd}>
+                                            <span style={{ fontWeight: 600, color: isWeekend(day) ? 'var(--text-muted)' : 'var(--text)' }}>
+                                                {dayOfWeek(day)} {dayNum(day)}
+                                            </span>
+                                        </td>
+                                        {cats.map((cat) => (
+                                            <td key={cat.id} style={{ textAlign: 'center', padding: '3px' }}>
+                                                <button
+                                                    onClick={() => toggleFrais(day, cat.id)}
+                                                    style={{
+                                                        width: '26px', height: '26px', borderRadius: '6px',
+                                                        border: `1.5px solid ${fraisGrid[day]?.[cat.id] ? 'var(--primary)' : 'var(--border)'}`,
+                                                        background: fraisGrid[day]?.[cat.id] ? 'var(--primary-bg)' : 'var(--white)',
+                                                        color: fraisGrid[day]?.[cat.id] ? 'var(--primary)' : 'transparent',
+                                                        cursor: 'pointer', transition: 'all var(--transition-fast)',
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    <Check style={{ width: '14px', height: '14px' }} />
+                                                </button>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+
 
             {/* Primes Grid */}
-            <div className="glass-card overflow-hidden">
-                <div className="p-4 border-b border-white/5">
-                    <h2 className="text-sm font-semibold text-white">Primes</h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-white/5">
-                                <th className="text-left text-slate-400 font-medium p-3 sticky left-0 bg-slate-950/95 backdrop-blur z-10 min-w-[80px]">Jour</th>
-                                {primesCats.map((p) => (
-                                    <th key={p.id} className="text-center text-slate-400 font-medium p-2 min-w-[70px]">
-                                        <div>{p.nom}</div>
-                                        <div className="text-slate-600">{formatCurrency(p.montant_defaut)}</div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {days.map((day) => (
-                                <tr key={day} className={`border-b border-white/5 ${isWeekend(day) ? 'bg-white/[0.02]' : ''}`}>
-                                    <td className="p-3 sticky left-0 bg-slate-950/95 backdrop-blur z-10">
-                                        <span className={`font-medium ${isWeekend(day) ? 'text-slate-600' : 'text-white'}`}>
-                                            {dayOfWeek(day)} {dayNum(day)}
-                                        </span>
-                                    </td>
+            <div>
+                <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Primes</h2>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <th style={{ ...thStyle, position: 'sticky', left: 0, background: 'var(--white)', zIndex: 10, minWidth: '80px' }}>Jour</th>
                                     {primesCats.map((p) => (
-                                        <td key={p.id} className="text-center p-2">
-                                            <button
-                                                onClick={() => togglePrime(day, p.id)}
-                                                className={`w-8 h-8 rounded-lg border transition-all ${primesGrid[day]?.[p.id]
-                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                                                    : 'bg-white/5 border-white/10 text-transparent hover:border-white/20'
-                                                    }`}
-                                            >
-                                                <Check className="w-4 h-4 mx-auto" />
-                                            </button>
-                                        </td>
+                                        <th key={p.id} style={{ ...thStyle, textAlign: 'center', minWidth: '52px', maxWidth: '70px', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            <div style={{ fontSize: '9px', lineHeight: '1.2' }}>{p.nom}</div>
+                                            <div style={{ color: 'var(--success)', fontWeight: 700, fontSize: '10px', marginTop: '2px' }}>{formatCurrency(p.montant_defaut)}</div>
+                                        </th>
                                     ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {days.map((day) => (
+                                    <tr key={day} style={{ borderBottom: '1px solid var(--border)', background: isWeekend(day) ? 'var(--bg)' : 'transparent' }}>
+                                        <td style={stickyTd}>
+                                            <span style={{ fontWeight: 600, color: isWeekend(day) ? 'var(--text-muted)' : 'var(--text)' }}>
+                                                {dayOfWeek(day)} {dayNum(day)}
+                                            </span>
+                                        </td>
+                                        {primesCats.map((p) => (
+                                            <td key={p.id} style={{ textAlign: 'center', padding: '3px' }}>
+                                                <button
+                                                    onClick={() => togglePrime(day, p.id)}
+                                                    style={{
+                                                        width: '26px', height: '26px', borderRadius: '6px',
+                                                        border: `1.5px solid ${primesGrid[day]?.[p.id] ? 'var(--success)' : 'var(--border)'}`,
+                                                        background: primesGrid[day]?.[p.id] ? 'var(--success-bg)' : 'var(--white)',
+                                                        color: primesGrid[day]?.[p.id] ? 'var(--success)' : 'transparent',
+                                                        cursor: 'pointer', transition: 'all var(--transition-fast)',
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    <Check style={{ width: '14px', height: '14px' }} />
+                                                </button>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            {/* Submit */}
-            <button
-                onClick={handleSubmit}
-                disabled={loading || !releveId}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-            >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                {loading ? 'Envoi...' : 'Soumettre le relevé'}
-            </button>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                    onClick={handleSaveDraft}
+                    disabled={isBusy || !releveId}
+                    className="btn"
+                    style={{
+                        flex: 1, padding: '14px', justifyContent: 'center', fontSize: '14px',
+                        background: 'var(--bg)', color: 'var(--text)', border: '1.5px solid var(--border)',
+                        opacity: (isBusy || !releveId) ? 0.5 : 1,
+                        cursor: (isBusy || !releveId) ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    {savingDraft ? <Loader2 style={{ width: '20px', height: '20px' }} className="animate-spin" /> : <Save style={{ width: '20px', height: '20px' }} />}
+                    {savingDraft ? 'Sauvegarde...' : 'Enregistrer en brouillon'}
+                </button>
+                <button
+                    onClick={handleSubmit}
+                    disabled={isBusy || !releveId}
+                    className="btn btn-primary"
+                    style={{
+                        flex: 1, padding: '14px', justifyContent: 'center', fontSize: '14px',
+                        opacity: (isBusy || !releveId) ? 0.5 : 1,
+                        cursor: (isBusy || !releveId) ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    {loading ? <Loader2 style={{ width: '20px', height: '20px' }} className="animate-spin" /> : <Send style={{ width: '20px', height: '20px' }} />}
+                    {loading ? 'Envoi...' : 'Soumettre le relevé'}
+                </button>
+            </div>
         </div>
+    );
+}
+
+export default function SaisieFraisPage() {
+    return (
+        <Suspense fallback={
+            <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+                <Loader2 style={{ width: '32px', height: '32px', color: 'var(--primary)', margin: '0 auto' }} className="animate-spin" />
+                <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Chargement...</p>
+            </div>
+        }>
+            <SaisieFraisPageInner />
+        </Suspense>
     );
 }

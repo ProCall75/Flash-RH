@@ -38,6 +38,7 @@ export async function createMessage(input: {
     contenu: string;
     type: MessageType;
     destinataires: Destinataires;
+    piece_jointe_url?: string | null;
 }) {
     const supabase = getClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +53,7 @@ export async function createMessage(input: {
             type: input.type,
             destinataires: input.destinataires,
             lu_par: [],
-            piece_jointe_url: null,
+            piece_jointe_url: input.piece_jointe_url || null,
         })
         .select()
         .single();
@@ -95,4 +96,37 @@ export async function getUnreadMessageCount(userId: string) {
     return (data ?? []).filter(
         (m: { lu_par: string[] | null }) => !(m.lu_par || []).includes(userId)
     ).length;
+}
+
+export async function replyToMessage(parentId: string, contenu: string) {
+    const supabase = getClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Non authentifié');
+
+    // Get parent message to build reply title
+    const { data: parent } = await supabase
+        .from('messages')
+        .select('titre')
+        .eq('id', parentId)
+        .single();
+
+    const replyTitle = parent?.titre
+        ? (parent.titre.startsWith('Re:') ? parent.titre : `Re: ${parent.titre}`)
+        : 'Re: message';
+
+    const { data, error } = await supabase
+        .from('messages')
+        .insert({
+            auteur_id: user.id,
+            titre: replyTitle,
+            contenu,
+            type: 'info',
+            destinataires: 'tous',
+            lu_par: [],
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data as Message;
 }

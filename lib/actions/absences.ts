@@ -97,12 +97,17 @@ export async function updateAbsenceStatut(
     return data as Absence;
 }
 
-export async function getAbsenceStats() {
+export async function getAbsenceStats(userId?: string) {
     const supabase = getClient();
-    const { data, error } = await supabase
+    let query = supabase
         .from('absences')
         .select('statut');
 
+    if (userId) {
+        query = query.eq('employe_id', userId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     const all = data ?? [];
 

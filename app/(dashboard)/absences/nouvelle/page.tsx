@@ -16,6 +16,18 @@ const absenceTypes: { value: AbsenceType; label: string }[] = [
     { value: 'exceptionnelle', label: 'Absence exceptionnelle' },
 ];
 
+const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 14px',
+    background: 'var(--white)', border: '1.5px solid var(--border)',
+    borderRadius: 'var(--radius-sm)', fontSize: '14px', fontFamily: 'inherit',
+    color: 'var(--text)', outline: 'none', transition: 'border-color var(--transition-fast)',
+};
+
+const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: '12px', fontWeight: 600,
+    color: 'var(--text-muted)', marginBottom: '6px',
+};
+
 export default function NouvelleAbsencePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -55,119 +67,114 @@ export default function NouvelleAbsencePage() {
         }
     }
 
-    const inputClass = 'w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all';
-    const labelClass = 'block text-sm font-medium text-slate-300 mb-1.5';
-
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
-            <Link href="/absences" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
-                <ArrowLeft className="w-4 h-4" />
+        <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <Link href="/absences" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                <ArrowLeft style={{ width: '16px', height: '16px' }} />
                 Retour aux absences
             </Link>
 
             <div>
-                <h1 className="text-2xl font-bold text-white">Nouvelle demande d&apos;absence</h1>
-                <p className="text-slate-400 mt-1">Remplissez le formulaire ci-dessous. Vous pouvez proposer jusqu&apos;à 3 choix de dates.</p>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Nouvelle demande d&apos;absence</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
+                    Remplissez le formulaire ci-dessous. Vous pouvez proposer jusqu&apos;à 3 choix de dates.
+                </p>
             </div>
 
             {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--error-bg)', border: '1px solid rgba(239,68,68,0.2)', color: '#991b1b', fontSize: '13px' }}>
                     {error}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Type */}
-                <div className="glass-card p-5">
-                    <label className={labelClass}>Type d&apos;absence</label>
-                    <select
-                        value={type}
-                        onChange={(e) => setType(e.target.value as AbsenceType)}
-                        className={inputClass}
-                    >
+                <div className="glass-card">
+                    <label style={labelStyle}>Type d&apos;absence</label>
+                    <select value={type} onChange={(e) => setType(e.target.value as AbsenceType)} style={inputStyle}>
                         {absenceTypes.map((t) => (
-                            <option key={t.value} value={t.value} className="bg-slate-800">{t.label}</option>
+                            <option key={t.value} value={t.value}>{t.label}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Choix 1 (obligatoire) */}
-                <div className="glass-card p-5 space-y-4">
-                    <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-blue-400" />
-                        <h2 className="text-sm font-semibold text-white">Choix de dates n°1</h2>
-                        <span className="text-xs text-red-400">*obligatoire</span>
+                {/* Choix 1 */}
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar style={{ width: '16px', height: '16px', color: 'var(--primary)' }} />
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>Choix de dates n°1</h2>
+                        <span style={{ fontSize: '11px', color: 'var(--error)', fontWeight: 600 }}>*obligatoire</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
-                            <label className={labelClass}>Dernier jour travaillé</label>
-                            <input type="date" required value={dateDebut1} onChange={(e) => setDateDebut1(e.target.value)} className={inputClass} />
+                            <label style={labelStyle}>Dernier jour travaillé</label>
+                            <input type="date" required value={dateDebut1} onChange={(e) => setDateDebut1(e.target.value)} style={inputStyle} />
                         </div>
                         <div>
-                            <label className={labelClass}>Date de reprise</label>
-                            <input type="date" required value={dateReprise1} onChange={(e) => setDateReprise1(e.target.value)} className={inputClass} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Choix 2 (optionnel) */}
-                <div className="glass-card p-5 space-y-4 opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-500" />
-                        <h2 className="text-sm font-semibold text-slate-300">Choix de dates n°2</h2>
-                        <span className="text-xs text-slate-600">optionnel</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className={labelClass}>Dernier jour travaillé</label>
-                            <input type="date" value={dateDebut2} onChange={(e) => setDateDebut2(e.target.value)} className={inputClass} />
-                        </div>
-                        <div>
-                            <label className={labelClass}>Date de reprise</label>
-                            <input type="date" value={dateReprise2} onChange={(e) => setDateReprise2(e.target.value)} className={inputClass} />
+                            <label style={labelStyle}>Date de reprise</label>
+                            <input type="date" required value={dateReprise1} onChange={(e) => setDateReprise1(e.target.value)} style={inputStyle} />
                         </div>
                     </div>
                 </div>
 
-                {/* Choix 3 (optionnel) */}
-                <div className="glass-card p-5 space-y-4 opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-500" />
-                        <h2 className="text-sm font-semibold text-slate-300">Choix de dates n°3</h2>
-                        <span className="text-xs text-slate-600">optionnel</span>
+                {/* Choix 2 */}
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', opacity: 0.75 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar style={{ width: '16px', height: '16px', color: 'var(--text-muted)' }} />
+                        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>Choix de dates n°2</h2>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>optionnel</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
-                            <label className={labelClass}>Dernier jour travaillé</label>
-                            <input type="date" value={dateDebut3} onChange={(e) => setDateDebut3(e.target.value)} className={inputClass} />
+                            <label style={labelStyle}>Dernier jour travaillé</label>
+                            <input type="date" value={dateDebut2} onChange={(e) => setDateDebut2(e.target.value)} style={inputStyle} />
                         </div>
                         <div>
-                            <label className={labelClass}>Date de reprise</label>
-                            <input type="date" value={dateReprise3} onChange={(e) => setDateReprise3(e.target.value)} className={inputClass} />
+                            <label style={labelStyle}>Date de reprise</label>
+                            <input type="date" value={dateReprise2} onChange={(e) => setDateReprise2(e.target.value)} style={inputStyle} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Choix 3 */}
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', opacity: 0.75 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar style={{ width: '16px', height: '16px', color: 'var(--text-muted)' }} />
+                        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>Choix de dates n°3</h2>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>optionnel</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={labelStyle}>Dernier jour travaillé</label>
+                            <input type="date" value={dateDebut3} onChange={(e) => setDateDebut3(e.target.value)} style={inputStyle} />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Date de reprise</label>
+                            <input type="date" value={dateReprise3} onChange={(e) => setDateReprise3(e.target.value)} style={inputStyle} />
                         </div>
                     </div>
                 </div>
 
                 {/* Dernière minute + Commentaire */}
-                <div className="glass-card p-5 space-y-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                         <input
                             type="checkbox"
                             checked={derniereMinute}
                             onChange={(e) => setDerniereMinute(e.target.checked)}
-                            className="w-5 h-5 rounded bg-white/5 border-white/10 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
                         />
-                        <span className="text-sm text-slate-300">Demande de dernière minute (délai &lt; 48h)</span>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Demande de dernière minute (délai &lt; 48h)</span>
                     </label>
 
                     <div>
-                        <label className={labelClass}>Commentaire</label>
+                        <label style={labelStyle}>Commentaire</label>
                         <textarea
                             value={commentaire}
                             onChange={(e) => setCommentaire(e.target.value)}
                             rows={3}
                             placeholder="Précisions éventuelles..."
-                            className={inputClass + ' resize-none'}
+                            style={{ ...inputStyle, resize: 'none' as const }}
                         />
                     </div>
                 </div>
@@ -176,9 +183,14 @@ export default function NouvelleAbsencePage() {
                 <button
                     type="submit"
                     disabled={loading || !dateDebut1 || !dateReprise1}
-                    className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    className="btn btn-primary"
+                    style={{
+                        width: '100%', padding: '14px', justifyContent: 'center', fontSize: '14px',
+                        opacity: (loading || !dateDebut1 || !dateReprise1) ? 0.5 : 1,
+                        cursor: (loading || !dateDebut1 || !dateReprise1) ? 'not-allowed' : 'pointer',
+                    }}
                 >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    {loading ? <Loader2 style={{ width: '20px', height: '20px' }} className="animate-spin" /> : <Send style={{ width: '20px', height: '20px' }} />}
                     {loading ? 'Envoi en cours...' : 'Soumettre la demande'}
                 </button>
             </form>

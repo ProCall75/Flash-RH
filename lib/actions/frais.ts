@@ -1,4 +1,5 @@
 import { createUntypedClient } from '@/lib/supabase/untyped-client';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type {
     ReleveFrais, CategorieFrais, PeriodeFrais,
     LigneFrais, LignePrime, CorrectionFrais,
@@ -226,7 +227,8 @@ export async function upsertLignePrime(input: {
 // --- Actions relevé ---
 
 export async function submitReleve(id: string) {
-    const supabase = getClient();
+    // Use admin client for status transitions — RLS blocks conducteur UPDATE to 'soumis'
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from('releves_frais')
         .update({ statut: 'soumis' })
@@ -262,10 +264,12 @@ export async function getReleveLignes(releveId: string) {
 }
 
 export async function validateReleve(id: string) {
-    const supabase = getClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get user from browser client, write with admin client
+    const browserClient = getClient();
+    const { data: { user } } = await browserClient.auth.getUser();
     if (!user) throw new Error('Non authentifié');
 
+    const supabase = createAdminClient();
     const { data, error } = await supabase
         .from('releves_frais')
         .update({
@@ -283,9 +287,12 @@ export async function correctReleve(
     releveId: string,
     corrections: { champ_modifie: string; ancienne_valeur: string; nouvelle_valeur: string; notes?: string }[]
 ) {
-    const supabase = getClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get user from browser client, write with admin client
+    const browserClient = getClient();
+    const { data: { user } } = await browserClient.auth.getUser();
     if (!user) throw new Error('Non authentifié');
+
+    const supabase = createAdminClient();
 
     // Insert corrections
     for (const c of corrections) {

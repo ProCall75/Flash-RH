@@ -61,6 +61,7 @@ export default function NouvelleAbsencePage() {
                 derniere_minute: derniereMinute,
             });
             router.push('/absences');
+            router.refresh();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erreur lors de la soumission');
             setLoading(false);
